@@ -1,0 +1,6 @@
+corpus/__pycache__/corpus_data.cpython-39.pyc
+tokenizer/__pycache__/pre_training.cpython-39.pyc
+/corpus/test_data/type1.csv
+corpus/__pycache__/custom_normalizers.cpython-39.pyc
+corpus/__pycache__/data_loader.cpython-39.pyc
+corpus/__pycache__/type.cpython-39.pyc
