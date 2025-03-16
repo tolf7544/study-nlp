@@ -1,5 +1,4 @@
 import json
-import pathlib
 from typing import Optional
 
 from tokenizers import (
@@ -12,13 +11,6 @@ from tokenizers import (
     Tokenizer,
 )
 
-data_path = {
-    "read": "E:\dataset\sample corpus\Sample\labeled\BOHE210000025292.json",
-
-    "processed-test": "E:\dataset\sample corpus\Sample\\txt\\test.json",
-    "processed-train_data": "E:\dataset\sample corpus\Sample\\txt\\train.json",
-    "processed-eval_data": "E:\dataset\sample corpus\Sample\\txt\\eval.json",
-}
 
 
 def pre_tkz_debug(str):

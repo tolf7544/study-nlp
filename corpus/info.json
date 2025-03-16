@@ -1,0 +1,16 @@
+{
+  "base_path": "E:/dataset",
+  "folders": ["labeled","unlabeled","normalized_data"],
+  "test_data_path":"corpus/test_data/type1.csv",
+  "corpus": {
+    "keys": ["sample", "unethical"],
+    "sample": {
+      "name": "sample_corpus",
+      "version": "100"
+    },
+    "unethical": {
+        "name": "unethical_corpus",
+        "version": "100"
+    }
+  }
+}

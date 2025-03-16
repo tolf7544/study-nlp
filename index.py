@@ -1,19 +1,22 @@
 import re
+from os import error
 
 import numpy as np
 import torch.cuda
+from sympy import false
 from transformers import PreTrainedTokenizerFast
 
-from corpus.corpus_data import Corpus
+from corpus.custom_normalizers import SentenceNormalizers
+from corpus.data_loader import CorpusLoader
 from tokenizer.pre_training import pre_training_tokenizer, load_data
 
 
 def test_tokenizer():
-    # result = load_data("read")
+    result = load_data("read")
     # tokenizer = pre_training_tokenizer(result)
 
     wrapped_tokenizer = PreTrainedTokenizerFast(
-        tokenizer_file="./tokenizer/data/tokenizer.json",
+        tokenizer_file="tokenizer/vocab/tokenizer.json",
         # tokenizer_file="tokenizer.json", # You can load from the tokenizer file, alternatively
         unk_token="[UNK]",
         pad_token="[PAD]",
@@ -45,16 +48,20 @@ def test_Corpus_normalizers():
         "어쩔티비어쩔티비어쩔티비",
         "ㅅㄱㄹㅅㄱㄹㅅㄱㄹ"
     ]
-
-    corpus = Corpus()
-    for sentence in contents:
-        print(corpus.remove_repetition_char(sentence=sentence))
+    corpus = SentenceNormalizers()
+    print(corpus.normalizer(contents).contents)
+    print(corpus.get_error_contents())
     # for sentence in contents:
     #     print(corpus.remove_repetition_char(content=sentence))
     #     print(corpus.remove_url(content=sentence))
-
-
+def console_log(input: str):
+    print(input)
 if __name__ == '__main__':
-    print("cuda status: ", torch.cuda.is_available())
+    # print("cuda status: ", torch.cuda.is_available())
+    # test_Corpus_normalizers()
 
-    test_Corpus_normalizers()
+    loader = CorpusLoader()
+    contents = loader.open_file("corpus/test_data/type1.csv", "type1.csv").contents.map()
+    print(contents)
+    #print(contents.all)
+

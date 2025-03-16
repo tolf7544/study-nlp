@@ -1,0 +1,38 @@
+{
+  "base_path": "",
+  "folders": ["labeled","unlabeled","normalized_data"],
+  "test_data_path":"",
+  "corpus": {
+    "keys": [<corpus keyword>...],
+    "<corpus keyword>": {
+      "name": "",
+      "version": "100"
+    },
+    .
+    .
+    .
+  }
+}
+
+## corpus에 관한 metadata를 작성하는 형태
+  "corpus": {
+    "<corpus keyword>": {
+      "name": ""
+  }
+
+## version 설명
+ NNN 형태로 왼쪽 부터 순서대로 1,2,3이다.
+
+ 첫번째: 릴리즈된 데이터셋의 번호 ( 100 형태는 공개된 데이터셋을 가져온 후 어떠한 과정도 거처지 않은 상태를 의미한다.  )
+ 두번째: 릴리스 후 데이터가 추가되거나 제거되어 전체적인 크기가 줄어든 릴리즈 횟수
+ 세번째: 전처리와 같은 데이터 정규화 과정을 실행한 횟수
+
+## 해당 파일이 로직에 의해 사요되는 과정 설명
+  이때 base_path정보와 corpus metadata의 name을 조합하여 특정 corpus의 base_path를 구성한다.
+  그 다음 folders의 파일을 통해 각 데이터가 존재하는 폴더에 접근한다.
+
+  path형태 예시: base_path / corpus.<keyword>.name / folders[<int>] / *
+
+  corpus폴더 내 존재하는 구성요소에 변동이 생길 경우 corpus/data_loader.py의 오류를 방지하기 위해
+  info.json의 folders 배열 정보를 하드코딩 하였으니 corpus/data_loader.py의 folders 정보를 같이 변경시켜줘야
+  프로그램이 정상적으로 작동한다.
