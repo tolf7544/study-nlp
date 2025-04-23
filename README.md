@@ -1,5 +1,8 @@
 https://github.com/codertimo/BERT-pytorch
 
+# repository
+해당 리포지토리는 NLP 공부용으로 생성되었습니다. 
+코드는 마음껏 참조하셔도 무방하지만 text data 또는 vocab 정보는 검증되지 않았기에 사용하지 않는 것을 권합니다.
 
 ### 커밋 작성 포멧
 ```
