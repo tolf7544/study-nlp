@@ -24,6 +24,7 @@ class Vocab():
     def load_vocab(self) -> None:
         r"""vocab을 load하여 self.vocab에 저장합니다."""
         # https://www.geeksforgeeks.org/convert-list-of-tuples-to-json-python/
+        
         if self.__check_vocab_exist() is True:
             if self.vocab_path[-3:] == "txt":
                 with open(self.vocab_path, "r", encoding="utf-8") as file:
@@ -38,6 +39,7 @@ class Vocab():
         else:
             printl(f"vocab is not exist in next location ( this message is not error )\ninput path: {self.vocab_path}")
         print(self.vocab)
+
     def get_vocab(self) -> Optional[object]:
         if self.vocab == None:
             exit(
