@@ -149,7 +149,10 @@ class DataNormalizers():
             sentence = self.__run_normalize(method_code, sentence)
         return sentence
 
-    def compute_normalize(self):
+
+    # 해당 방식은 partition 분활 과정을 거치지 않기에 대량의 데이터 처리에 비효율적이다.
+    # pandas 또는 dask를 사용하여 대규모 데이터에 적합한 프로세스를 통해 전처리를 진행하는 것을 추천
+    def compute_normalize(self) -> TypeCorpus:
         r"""사전 입력된 말뭉치를 대상으로 정규화 대기열에 입력된 정규화 함수코드를 기준으로 정규화 진행"""
         for method_code in self.__method_queue:
             for (i, sentence) in enumerate(self.__corpus):
