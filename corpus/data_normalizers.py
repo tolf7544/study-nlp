@@ -1,70 +1,91 @@
 #https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=268
 # 인공지능 윤리 연구를 위한 비정형 텍스트 데이터셋
+import os
 import re
-from typing import Union, Optional
-
-import numpy
-import torch
-from sympy.strategies.core import switch
-
-from corpus.type import TypeCorpus, NormalizationMethod
-
+import sys
+import unicodedata
+from corpus.type import TypeCorpus, NormalizationMethod, NormalizationOutputType
+from util import Debug
 
 class DataNormalizers():
-    __method_queue:list[NormalizationMethod]
-    __corpus: TypeCorpus
+    method_queue:list[NormalizationMethod]
+    unicode_normalization_type: NormalizationOutputType
+    corpus: TypeCorpus
+    debug: Debug
+
     def __init__(self):
-        self.__method_queue = []
-        self. __corpus = []
+        self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
+        self.method_queue = []
+        self. corpus = [] #   list[str] - default | numpy.ndarray | torch.Tensor
+        self.unicode_normalization_type = NormalizationOutputType.NFC
     # numpy type 및 torch tensor 타입을 입력값으로 받는 로직 - _정리
     def set_corpus(self, corpus: TypeCorpus):
         r"""말뭉치 데이터 입력"""
-        self.__corpus = corpus
+        self.corpus = corpus
 
     def get_queued_method(self):
         r"""대기중인 정규화 작업 목록 출력"""
-        return self.__method_queue
+        return self.method_queue
 
     def get_corpus(self):
         r"""입력된 말뭉치 데이터 출력"""
-        return self.__corpus
+        return self.corpus
 
     def add_all_method(self):
         r"""모든 정규화 기능을 정규화에 적용되는 method queue에 추가"""
         for property in NormalizationMethod:
-            self.__method_queue.append(property)
+            self.method_queue.append(property)
 
-    def add_remove_linebreaks(self):
+    def add_clean_text(self):
         r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
-        self.__method_queue.append(NormalizationMethod.REMOVE_LINEBREAKS)
+        self.method_queue.append(NormalizationMethod.CLEAN_TEXT)
 
-    def add_remove_whitespace(self):
-        r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
-        self.__method_queue.append(NormalizationMethod.REMOVE_WHITESPACE)
+    def use_NFC(self):
+        r"""정규화의 최종 출력 단계에서 적용되는 unicode normalize NFC
 
+        NFD: 정규화+분해 => ㅇㅏㄴㄴㅕㅇ
+
+        NFC: 정규화+조합 => 안녕
+
+        default 정규화는 NFC(정규화 + 조합)이다.
+        """
+        self.unicode_normalization_type = NormalizationOutputType.NFC
+
+    def use_NFD(self):
+        r"""정규화의 최종 출력 단계에서 적용되는 unicode normalize NFD
+        
+        NFD: 정규화+분해 => ㅇㅏㄴㄴㅕㅇ
+        
+        NFC: 정규화+조합 => 안녕
+        
+        default 정규화는 NFC(정규화 + 조합)이다.
+        """
+        self.method_queue.append = NormalizationOutputType.NFD
+
+    # 자연어 정규화 과정에서 이메일 또는 url 형식으로 비속어를 작성 시 탐지하기 어렵기에 사전학습을 통한 자연어 이해성 높이는 방향으로 변경
     # def add_remove_url(self):
     #     r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
-    #     self.__method_queue.append(NormalizationMethod.REMOVE_URL)
+    #     self.method_queue.append(NormalizationMethod.REMOVE_URL)
 
     # def add_remove_email(self):
     #     r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
-    #     self.__method_queue.append(NormalizationMethod.REMOVE_EMAIL)
+    #     self.method_queue.append(NormalizationMethod.REMOVE_EMAIL)
 
     def add_remove_repetition_char(self):
         r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
-        self.__method_queue.append(NormalizationMethod.REMOVE_REPETITION_CHAR)
+        self.method_queue.append(NormalizationMethod.REMOVE_REPETITION_CHAR)
 
-    def __remove_url(self, sentence:str):
-        r"""https 또는 http로 시작하는 url 제거"""
-        #https://stackoverflow.com/questions/9760588/how-do-you-extract-a-url-from-a-string-using-python
-
-        cleansing_data = re.sub(pattern=r'(https?:\/\/[^\s]+)', repl='', string=sentence)
-        return cleansing_data
+    # def __remove_url(self, sentence:str):
+    #     r"""https 또는 http로 시작하는 url 제거"""
+    #     #https://stackoverflow.com/questions/9760588/how-do-you-extract-a-url-from-a-string-using-python
+    #
+    #     cleansing_data = re.sub(pattern=r'(https?:\/\/[^\s]+)', repl='', string=sentence)
+    #     return cleansing_data
 
     def __remove_N_repetition_char(self, depth_count, sentence, sub_target_regex_pattern, replace_char_regex_pattern):
         r"""입력된 정규표현식을 기준으로 N개의 모든 반복문자를 탐지 및 정규화된 문자열로 치환"""
-        if depth_count == 30:
-            return "overflow"
+        if depth_count == sys.getrecursionlimit() - 1:
+            return sentence
 
         target_regex = re.compile(sub_target_regex_pattern)
         replace_regex = re.compile(replace_char_regex_pattern)
@@ -88,11 +109,36 @@ class DataNormalizers():
 
             return self.__remove_N_repetition_char(depth_count + 1, N_char_repetiton, target_regex, replace_regex)
 
-    def __remove_linebreaks(self, sentence: str):
-        r"""\n 또는 \r와 같이 문단을 나누는 요소를 공백문자 한개로 변환한다."""
-        detect_linebreaks_regex = re.compile(r"\r\n|\n|\r")
-        sentence = detect_linebreaks_regex.sub(" ",sentence)
+    def __clean_text(self, sentence: str):
+        r"""bert normalizer의 clean text 기능 구현"""
+        #https://stackoverflow.com/questions/26741455/how-to-remove-control-characters-from-string
+        regex = re.compile(r"[\u0000-\u001F\u007F-\u009F]/g")
+        sentence = regex.sub(" ",sentence)
+        regex = re.compile(r"\n|\r|\t")
+        sentence = regex.sub(" ",sentence)
         return sentence
+
+    def __normalize_UFC(self, sentence: str) -> str:
+        r"""
+        해당 메서드는 최종 출력 값 형태를 변경하는 역할로 queue에 적용하는 방식이 아닌 return_format에 관여한다
+
+        :return: 정규화된 요소가 합쳐진 String
+        """
+        result = unicodedata.normalize("NFC", sentence)
+        return result
+    #파이썬 터미널에서 출력할 때 UFD로 분해된 문장은 합쳐져 출력된다.
+    #만약 UFD가 진행되었는지 확인하기 위해서는 문자열의 index에 접근하여 자모단위의 출력이 발생하는 지 확인할 것
+    def __normalize_UFD(self, sentence: str) -> str:
+        r"""
+        해당 메서드는 최종 출력 값 형태를 변경하는 역할로 queue에 적용하는 방식이 아닌 return_format에 관여한다
+
+        :return: 유니코드 정규화 후 jamo 단위로 분해된 String
+        """
+        result = unicodedata.normalize("NFD", sentence)
+        return result
+    # def __remove_email(self, sentence: str):
+    #     cleansing_data = re.sub(pattern=r'/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/.', repl='', string=sentence)
+    #     return  cleansing_data
 
     def __remove_whitespace(self, sentence: str):
         r"""1개 이상의 연속된 공백 문자를 1개의 공백문자로 변환한다."""
@@ -125,27 +171,36 @@ class DataNormalizers():
 
         return one_char_repetition
 
-    def __run_normalize(self, method_code: NormalizationMethod, sentence: str):
+    def __run_normalize(self, method_code: NormalizationMethod, sentence: str) -> str:
         r"""정규화 진행"""
-        if method_code == NormalizationMethod.REMOVE_URL:
-            sentence = self.__remove_url(sentence)
-        elif method_code == NormalizationMethod.REMOVE_WHITESPACE:
+        if method_code == NormalizationMethod.CLEAN_TEXT:
             sentence = self.__remove_whitespace(sentence)
         elif method_code == NormalizationMethod.REMOVE_REPETITION_CHAR:
             sentence = self.__remove_repetition_char(sentence)
-        elif method_code == NormalizationMethod.REMOVE_LINEBREAKS:
-            sentence = self.__remove_linebreaks(sentence)
-        else:
-            ...
+        # elif method_code == NormalizationMethod.REMOVE_EMAIL:
+        #     sentence = self.__remove_email(sentence)
+        # elif method_code == NormalizationMethod.REMOVE_URL:
+        #     sentence = self.__remove_url(sentence)
+
+
+        if self.unicode_normalization_type == NormalizationOutputType.NFC:
+            sentence = self.__normalize_UFD(sentence)
+        elif self.unicode_normalization_type == NormalizationOutputType.NFD:
+            sentence = self.__normalize_UFC(sentence)
+
         return sentence
 
-    def filtering_normalize(self, sentence: str):
-        r"""정규화 대기열에 입력된 정규화 함수코드를 기준으로 입력된 단일 문장 정규화 진행"""
+    def filtering_normalize(self, sentence: str) -> str:
+        r"""정규화 대기열에 입력된 정규화 함수코드를 기준으로 입력된 단일 문장 정규화 진행
+
+        대규모 데이터 처리 시 partition으로 분활되어 처리를 할 수 있도록 지원하는 dask에 해당 메서드를 .map() 함수에
+        넘겨서 사용하는 것을 추천
+        """
         if isinstance(sentence, str) is False: # 문자열이 아닌 데이터는 따로 출력하여 log파일 생성하도록 해야함
-            print(sentence)
+            self.debug.debug_print(f"**pass** {sentence}")
             return ""
 
-        for method_code in self.__method_queue:
+        for method_code in self.method_queue:
             sentence = self.__run_normalize(method_code, sentence)
         return sentence
 
@@ -154,11 +209,13 @@ class DataNormalizers():
     # pandas 또는 dask를 사용하여 대규모 데이터에 적합한 프로세스를 통해 전처리를 진행하는 것을 추천
     def compute_normalize(self) -> TypeCorpus:
         r"""사전 입력된 말뭉치를 대상으로 정규화 대기열에 입력된 정규화 함수코드를 기준으로 정규화 진행"""
-        for method_code in self.__method_queue:
-            for (i, sentence) in enumerate(self.__corpus):
+
+        self.debug.debug_print("[ warning ] corpus length is 0. compute_normalize() will not do anything.\n you should use .set_corpus(). ( if you want normalized not using .set_corpus(), using .filtering_normalized(sentence: str) )")
+        for method_code in self.method_queue:
+            for (i, sentence) in enumerate(self.corpus):
                 if isinstance(sentence, str) is False:  # 문자열이 아닌 데이터는 따로 출력하여 log파일 생성하도록 해야함
-                    print(sentence)
-                    self.__corpus[i] = ""
+                    self.debug.debug_print(f"**pass** {sentence}")
+                    self.corpus[i] = ""
                     continue
-                self.__corpus[i] = self.__run_normalize(method_code, sentence)
-        return self.__corpus
+                self.corpus[i] = self.__run_normalize(method_code, sentence)
+        return self.corpus

@@ -1,13 +1,7 @@
-import os
-import pathlib
 import typing
-
 import dask.dataframe
 import dask.dataframe as dd
-from bokeh.core.property.struct import Optional
 from dask.bag import Bag
-from dask_expr.io import ReadCSV
-
 from corpus.type import TypePath
 
 
@@ -25,6 +19,7 @@ class DataLoader():
         self.block_size = data_block_size
 
 
+
     # https://stackoverflow.com/questions/58541722/what-is-the-correct-way-in-python-to-annotate-a-path-with-type-hints
     def load_csv(self, path: TypePath, is_header:bool =True)-> Bag:
         header = "infer"
@@ -34,8 +29,14 @@ class DataLoader():
         temp = (dask.dataframe.DataFrame)(dd.read_csv(path, self.block_size, header=header))
         return  temp.to_bag()
 
-    def load_json(self, path: TypePath):
-        ...
+    def load_json(self, path: TypePath)-> Bag:
+        temp = (dask.dataframe.DataFrame)(dd.read_json(path, self.block_size))
+        return  temp.to_bag()
 
-    def load_txt(self, path: TypePath):
-        ...
+    def load_txt(self, path: TypePath, is_header:bool =True)-> Bag:
+        header = "infer"
+
+        if not is_header:
+            header = None
+        temp = (dask.dataframe.DataFrame)(dd.read_json(path, self.block_size, header=header))
+        return temp.to_bag()

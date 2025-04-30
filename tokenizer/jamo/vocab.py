@@ -1,52 +1,64 @@
-import json
+from __future__ import annotations
 import os
-from typing import Optional
-
-from corpus.type import TypePath
-from util import printl
+from tokenizer.type import DefaultSpecialToken
+from util import Debug
 
 
-class Vocab():
-    vocab_path: TypePath
-    vocab: Optional[object]
 
-    def __init__(self, path: TypePath = "./load_test_vocab.json"):
-        self.vocab_path = path
-        self.vocab = None
+# 대입 연산자를 통한 연산은 불가능 하도록 정하여야 함.
+class Vocab(dict):
+    __reverse_dict: dict[str, int]
+    debug: Debug
 
-    def __check_vocab_exist(self) -> bool:
-        r"""path에 vocab이 존재할 시 true를 리턴하며 오류 발생 또는 아닐 시 출력값과 False를 리턴합니다."""
-        if os.path.exists(self.vocab_path):
-            return True
+    def __init__(self, _object: dict[int, str]):
+        self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
+
+        if isinstance(_object, dict) == False:
+            self.debug.unexpected_error("Vocab.__init__(...) argument(_object) must be dict format. ")
+            return
+
+        if _object.__len__() > 0:
+            test_pair = list(_object.items())[0]
+            if isinstance(test_pair[0], int) and isinstance(test_pair[1], str):
+                super().__init__(_object)
+                self.__reverse_dict ={token: key for (key, token) in _object.items()}
+            else:
+                self.debug.unexpected_error("Vocab.__init__(...) argument(_object) key,value type must be {key: int, value: str}.")
         else:
+            self.debug.opt_debug_print("vocab is empty.")
+
+    def __setitem__(self, key, value):
+        self.debug.debug_print("redirected add() method (prevent duplicate key or value)")
+        return self.add(value)
+
+    def __delitem__(self, key):
+        self.debug.unexpected_error(
+            "The vocab class is designed to allow only reading and writing to prevent unintentional errors.\n"
+            "( If you need to modify or delete data from the vocab, you must access the vocab file directly. )")
+
+    def has(self, token: str) -> bool:
+        r"""true: 값이 존재함. false: 값이 존재하지 않음"""
+        return self.__reverse_dict.get(token) != None
+
+    def add(self, token: str) -> bool:
+        key = self.__len__()
+
+        if self.has(token):
             return False
 
-    def load_vocab(self) -> None:
-        r"""vocab을 load하여 self.vocab에 저장합니다."""
-        # https://www.geeksforgeeks.org/convert-list-of-tuples-to-json-python/
-        
-        if self.__check_vocab_exist() is True:
-            if self.vocab_path[-3:] == "txt":
-                with open(self.vocab_path, "r", encoding="utf-8") as file:
-                    vocab_array = file.readlines()
-                    self.vocab = [{f"{i}": token.strip()} for (i, token) in list(enumerate(vocab_array))]
-            elif self.vocab_path[-4:] == "json":
-                with open(self.vocab_path, "r", encoding="utf-8") as file:
-                    self.vocab = json.load(file)
-            else:
-                exit(
-                    f"vocab must be .txt or .json file.\ninput path: {self.vocab_path}")
-        else:
-            printl(f"vocab is not exist in next location ( this message is not error )\ninput path: {self.vocab_path}")
-        print(self.vocab)
+        super().__setitem__(key, token)
+        self.__reverse_dict[token] = key
+        return  True
 
-    def get_vocab(self) -> Optional[object]:
-        if self.vocab == None:
-            exit(
-                "vocab is not exist.\n you can try this solution.\n1. load pre-trained vocab\n input corpus for making vocab")
+    def token_2_key(self, token: str):
+        val = self.__reverse_dict.get(token)
+        if val == None:
+            return DefaultSpecialToken.UNKNOWN_TOKEN
         else:
-            return self.vocab
-    def index_2_key(self):
-        ...
-    def key_2_index(self):
-        ...
+            return val
+    def key_2_token(self, key: int):
+        val = self.get(key)
+        if val == None:
+            return DefaultSpecialToken.UNKNOWN_TOKEN
+        else:
+            return val
