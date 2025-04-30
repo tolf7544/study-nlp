@@ -42,9 +42,13 @@ class DataNormalizers():
         r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
         self.__method_queue.append(NormalizationMethod.REMOVE_WHITESPACE)
 
-    def add_remove_url(self):
-        r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
-        self.__method_queue.append(NormalizationMethod.REMOVE_URL)
+    # def add_remove_url(self):
+    #     r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
+    #     self.__method_queue.append(NormalizationMethod.REMOVE_URL)
+
+    # def add_remove_email(self):
+    #     r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
+    #     self.__method_queue.append(NormalizationMethod.REMOVE_EMAIL)
 
     def add_remove_repetition_char(self):
         r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
