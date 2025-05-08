@@ -116,6 +116,12 @@ class DataNormalizers():
         sentence = regex.sub(" ",sentence)
         regex = re.compile(r"\n|\r|\t")
         sentence = regex.sub(" ",sentence)
+
+        r"""1개 이상의 연속된 공백 문자를 1개의 공백문자로 변환한다."""
+        detect_whitespace_between_character_regex = re.compile(r"[ ]{2,}")
+        detect_whitespace_begin_or_end_regex = re.compile(r"^( )+|( )+$")
+        sentence = detect_whitespace_between_character_regex.sub(" ",sentence)
+        sentence = detect_whitespace_begin_or_end_regex.sub("",sentence)
         return sentence
 
     def __normalize_UFC(self, sentence: str) -> str:
@@ -139,14 +145,6 @@ class DataNormalizers():
     # def __remove_email(self, sentence: str):
     #     cleansing_data = re.sub(pattern=r'/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/.', repl='', string=sentence)
     #     return  cleansing_data
-
-    def __remove_whitespace(self, sentence: str):
-        r"""1개 이상의 연속된 공백 문자를 1개의 공백문자로 변환한다."""
-        detect_whitespace_between_character_regex = re.compile(r"[ ]{2,}")
-        detect_whitespace_begin_or_end_regex = re.compile(r"^( )+|( )+$")
-        sentence = detect_whitespace_between_character_regex.sub(" ",sentence)
-        sentence = detect_whitespace_begin_or_end_regex.sub("",sentence)
-        return sentence
 
     def __remove_repetition_char(self, sentence: str):
         r"""모든 반복문자를 탐지 및 정규화된 문자열로 치환"""
@@ -173,8 +171,9 @@ class DataNormalizers():
 
     def __run_normalize(self, method_code: NormalizationMethod, sentence: str) -> str:
         r"""정규화 진행"""
+        
         if method_code == NormalizationMethod.CLEAN_TEXT:
-            sentence = self.__remove_whitespace(sentence)
+            sentence = self.__clean_text(sentence)
         elif method_code == NormalizationMethod.REMOVE_REPETITION_CHAR:
             sentence = self.__remove_repetition_char(sentence)
         # elif method_code == NormalizationMethod.REMOVE_EMAIL:

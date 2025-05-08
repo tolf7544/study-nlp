@@ -4,6 +4,7 @@ from typing import Optional
 from corpus.data_normalizers import DataNormalizers
 from corpus.type import JamoEncodingType, TypePath, NormalizationMethod
 from tokenizer.jamo.vocab import Vocab
+from tokenizer.type import ZeroVector
 from util import Debug
 
 
@@ -56,7 +57,7 @@ class JamoTokenizer():
 
     vocab: Vocab
     dataNormalizer: DataNormalizers
-
+    debug: Debug
     def __init__(self,
                  vocab_path: TypePath = None,
                  sentence_length: int = 200,
@@ -65,7 +66,6 @@ class JamoTokenizer():
                  normalizer: list[NormalizationMethod] = None,
                  encoding_type: JamoEncodingType = JamoEncodingType.JAMO_VECTOR,
                  ):
-        super().__init__(vocab_path)
         self.padding = padding
         self.truncation = truncation
         self.sentence_length = sentence_length
@@ -74,16 +74,28 @@ class JamoTokenizer():
         self.dataNormalizer = DataNormalizers()
         self.vocab = LoadVocab(vocab_path).load_file()
 
-    def add_jamo(self, corpus: list[str]):
+    def add_jamo_from_corpus(self, corpus: list[str]):
         r"""add jamo to vocab"""
+
         for content in corpus:
-            content = self.normalizer.normalize_str(content)
-            [self.add_vocab(char) for char in list(content)]
+            content = self.dataNormalizer.filtering_normalize(content)
+            for char in list(set(content)):
+                self.vocab.add(char) # has()문이 내장되어 있음.
+
         self.debug.opt_debug_print("successfully added")
-        self.debug.opt_debug_print(self.key_vocab)
+        self.debug.opt_debug_print(self.vocab)
 
     def __zero_sparse_vector(self):
-        ...
+        ... 
 
+    def tokenize(self, sentence: str):
+        self.dataNormalizer.filtering_normalize(sentence=sentence)
+
+    def encode(self, sentence: str):
+        unit_set = set(sentence)
+        unit_key_pair = []
+
+        for word in unit_set:
+            self.vocab.token_2_key(word)
 
 

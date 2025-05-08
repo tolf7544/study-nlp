@@ -50,6 +50,7 @@ class Vocab(dict):
         self.__reverse_dict[token] = key
         return  True
 
+    
     def token_2_key(self, token: str):
         val = self.__reverse_dict.get(token)
         if val == None:
