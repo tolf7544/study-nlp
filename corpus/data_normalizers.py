@@ -18,6 +18,9 @@ class DataNormalizers():
         self.method_queue = []
         self. corpus = [] #   list[str] - default | numpy.ndarray | torch.Tensor
         self.unicode_normalization_type = NormalizationOutputType.NFC
+
+        self.add_all_method() # default normalized option
+
     # numpy type 및 torch tensor 타입을 입력값으로 받는 로직 - _정리
     def set_corpus(self, corpus: TypeCorpus):
         r"""말뭉치 데이터 입력"""
@@ -60,7 +63,7 @@ class DataNormalizers():
         
         default 정규화는 NFC(정규화 + 조합)이다.
         """
-        self.method_queue.append = NormalizationOutputType.NFD
+        self.unicode_normalization_type = NormalizationOutputType.NFD
 
     # 자연어 정규화 과정에서 이메일 또는 url 형식으로 비속어를 작성 시 탐지하기 어렵기에 사전학습을 통한 자연어 이해성 높이는 방향으로 변경
     # def add_remove_url(self):
@@ -169,24 +172,23 @@ class DataNormalizers():
 
         return one_char_repetition
 
-    def __run_normalize(self, method_code: NormalizationMethod, sentence: str) -> str:
+    def __run_normalize(self, method_code: list[NormalizationMethod], sentence: str) -> str:
         r"""정규화 진행"""
-        
-        if method_code == NormalizationMethod.CLEAN_TEXT:
-            sentence = self.__clean_text(sentence)
-        elif method_code == NormalizationMethod.REMOVE_REPETITION_CHAR:
-            sentence = self.__remove_repetition_char(sentence)
-        # elif method_code == NormalizationMethod.REMOVE_EMAIL:
-        #     sentence = self.__remove_email(sentence)
-        # elif method_code == NormalizationMethod.REMOVE_URL:
-        #     sentence = self.__remove_url(sentence)
+        for code in method_code:
+            if code == NormalizationMethod.CLEAN_TEXT:
+                sentence = self.__clean_text(sentence)
+            elif  code == NormalizationMethod.REMOVE_REPETITION_CHAR:
+                sentence = self.__remove_repetition_char(sentence)
+            # elif code == NormalizationMethod.REMOVE_EMAIL:
+            #     sentence = self.__remove_email(sentence)
+            # elif code == NormalizationMethod.REMOVE_URL:
+            #     sentence = self.__remove_url(sentence)
 
 
         if self.unicode_normalization_type == NormalizationOutputType.NFC:
-            sentence = self.__normalize_UFD(sentence)
-        elif self.unicode_normalization_type == NormalizationOutputType.NFD:
             sentence = self.__normalize_UFC(sentence)
-
+        elif self.unicode_normalization_type == NormalizationOutputType.NFD:
+            sentence = self.__normalize_UFD(sentence)
         return sentence
 
     def filtering_normalize(self, sentence: str) -> str:
@@ -198,9 +200,9 @@ class DataNormalizers():
         if isinstance(sentence, str) is False: # 문자열이 아닌 데이터는 따로 출력하여 log파일 생성하도록 해야함
             self.debug.debug_print(f"**pass** {sentence}")
             return ""
-
-        for method_code in self.method_queue:
-            sentence = self.__run_normalize(method_code, sentence)
+        
+        sentence = self.__run_normalize(self.method_queue, sentence)
+            
         return sentence
 
 
@@ -210,11 +212,10 @@ class DataNormalizers():
         r"""사전 입력된 말뭉치를 대상으로 정규화 대기열에 입력된 정규화 함수코드를 기준으로 정규화 진행"""
 
         self.debug.debug_print("[ warning ] corpus length is 0. compute_normalize() will not do anything.\n you should use .set_corpus(). ( if you want normalized not using .set_corpus(), using .filtering_normalized(sentence: str) )")
-        for method_code in self.method_queue:
-            for (i, sentence) in enumerate(self.corpus):
-                if isinstance(sentence, str) is False:  # 문자열이 아닌 데이터는 따로 출력하여 log파일 생성하도록 해야함
-                    self.debug.debug_print(f"**pass** {sentence}")
-                    self.corpus[i] = ""
-                    continue
-                self.corpus[i] = self.__run_normalize(method_code, sentence)
+        for (i, sentence) in enumerate(self.corpus):
+            if isinstance(sentence, str) is False:  # 문자열이 아닌 데이터는 따로 출력하여 log파일 생성하도록 해야함
+                self.debug.debug_print(f"**pass** {sentence}")
+                self.corpus[i] = ""
+                continue
+            self.corpus[i] = self.__run_normalize(self.method_queue, sentence)
         return self.corpus

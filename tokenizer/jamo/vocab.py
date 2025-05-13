@@ -12,7 +12,8 @@ class Vocab(dict):
 
     def __init__(self, _object: dict[int, str]):
         self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
-
+        self.__reverse_dict = {}
+        
         if isinstance(_object, dict) == False:
             self.debug.unexpected_error("Vocab.__init__(...) argument(_object) must be dict format. ")
             return

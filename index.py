@@ -67,12 +67,13 @@ def test_Corpus_normalizers():
 
 
 def test_tokenizer_train():
-    JamoTokenizer().train_tokenzier(contents)
+    corpus = DataNormalizers()
+    corpus.use_NFD()
+    with open("./tokenizer/data/test_corpus/test_corpus.txt", encoding="utf-8", mode="r") as f:
+        JamoTokenizer().add_jamo_from_corpus(f.readlines())
 
 if __name__ == '__main__':
     # print("cuda status: ", torch.cuda.is_available())
-
-    Vocab("tokenizer/jamo/load_test_vocab.json").load_vocab()
     # test_Corpus_normalizers()
 
     test_tokenizer_train()
