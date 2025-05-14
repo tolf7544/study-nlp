@@ -11,9 +11,6 @@ class NormalizationMethod(Enum):
     # REMOVE_EMAIL = auto()
     REMOVE_REPETITION_CHAR = auto()
 
-class NormalizationOutputType(Enum):
-    NFD = auto()
-    NFC = auto()
 
 class JamoEncodingType(Enum):
     TOKEN_VECTOR = auto()

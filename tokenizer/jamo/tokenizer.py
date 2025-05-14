@@ -1,10 +1,13 @@
 import json
 import os
 from typing import Optional
+
+from jamo import j2hcj, h2j, j2h, is_jamo, get_jamo_class, hcj_to_jamo
+
 from corpus.data_normalizers import DataNormalizers
 from corpus.type import JamoEncodingType, TypePath, NormalizationMethod
 from tokenizer.jamo.vocab import Vocab
-from tokenizer.type import ZeroVector
+from tokenizer.type import JamoType
 from util import Debug
 
 
@@ -59,36 +62,68 @@ class JamoTokenizer():
     dataNormalizer: DataNormalizers
     debug: Debug
     def __init__(self,
-                 vocab_path: TypePath = None,
+                 vocab_path: TypePath = "./vocab.json",
                  sentence_length: int = 200,
                  padding: bool = False,
                  truncation: bool = False,
                  normalizer: list[NormalizationMethod] = None,
                  encoding_type: JamoEncodingType = JamoEncodingType.JAMO_VECTOR,
                  ):
+        self.vocab_path = vocab_path
         self.padding = padding
         self.truncation = truncation
         self.sentence_length = sentence_length
         self.normalizer_queue = normalizer
         self.encoding_type = encoding_type
         self.dataNormalizer = DataNormalizers()
+
         self.vocab = LoadVocab(vocab_path).load_file()
+        self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
+
+    def __h2hcj(self, content) -> list[JamoType]:
+        r"""
+        한글 문장 > h2j(자소 단위 정규화) > j2hcj(호환 자모 정규화)
+        """
+        result = []
+        for char in content:
+            char = list(j2hcj(h2j(char)))
+            if char.__len__() < 3:
+                for i in range(3 - char.__len__()):
+                    char.append("")
+            result.append(JamoType(char))
+        return result
+
+    def __jamo_string_2_h(self, jamo_str: list[JamoType]):
+        r"""(3, vocab_length) shape 형태 백터 한글 변형"""
+        result = ""
+        for char_jamo in jamo_str:
+            print(*char_jamo)
+            if char_jamo[0].__len__() == 1 and char_jamo[1].__len__() == 1: # 초성 중성이 존재할 시에만 j2h 메서드 사용
+                result += j2h(*char_jamo)
+            else:
+                result += char_jamo[0]
+
+        return result
 
     def add_jamo_from_corpus(self, corpus: list[str]):
         r"""add jamo to vocab"""
 
         for content in corpus:
             content = self.dataNormalizer.filtering_normalize(content)
+            content = j2hcj(h2j(content))
             for char in list(set(content)):
                 self.vocab.add(char) # has()문이 내장되어 있음.
 
         self.debug.opt_debug_print("successfully added")
         self.debug.opt_debug_print(self.vocab)
 
+        with open("./tokenizer/data/vocab.json", encoding="utf-8", mode="w") as f:
+            f.write(json.dumps(self.vocab, ensure_ascii= False))
+
     def __zero_sparse_vector(self):
         ... 
 
-    def tokenize(self, sentence: str):
+    def tokenize(self, sentence: list[str]):
         self.dataNormalizer.filtering_normalize(sentence=sentence)
 
     def encode(self, sentence: str):

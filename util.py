@@ -29,3 +29,7 @@ class Debug():
             print(msg)
         else:
             exit(msg)
+
+    # def create_analysis_object(self):
+    #     ...
+        # 성공 / 실패 분석 및 통계를 위한 오브젝트 제공 디버깅 함수

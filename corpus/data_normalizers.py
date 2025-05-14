@@ -4,12 +4,11 @@ import os
 import re
 import sys
 import unicodedata
-from corpus.type import TypeCorpus, NormalizationMethod, NormalizationOutputType
+from corpus.type import TypeCorpus, NormalizationMethod
 from util import Debug
 
 class DataNormalizers():
     method_queue:list[NormalizationMethod]
-    unicode_normalization_type: NormalizationOutputType
     corpus: TypeCorpus
     debug: Debug
 
@@ -17,7 +16,6 @@ class DataNormalizers():
         self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
         self.method_queue = []
         self. corpus = [] #   list[str] - default | numpy.ndarray | torch.Tensor
-        self.unicode_normalization_type = NormalizationOutputType.NFC
 
         self.add_all_method() # default normalized option
 
@@ -42,28 +40,6 @@ class DataNormalizers():
     def add_clean_text(self):
         r"""해당 메서드를 정규화를 진행하기 위해 대기 중인 method queue에 추가"""
         self.method_queue.append(NormalizationMethod.CLEAN_TEXT)
-
-    def use_NFC(self):
-        r"""정규화의 최종 출력 단계에서 적용되는 unicode normalize NFC
-
-        NFD: 정규화+분해 => ㅇㅏㄴㄴㅕㅇ
-
-        NFC: 정규화+조합 => 안녕
-
-        default 정규화는 NFC(정규화 + 조합)이다.
-        """
-        self.unicode_normalization_type = NormalizationOutputType.NFC
-
-    def use_NFD(self):
-        r"""정규화의 최종 출력 단계에서 적용되는 unicode normalize NFD
-        
-        NFD: 정규화+분해 => ㅇㅏㄴㄴㅕㅇ
-        
-        NFC: 정규화+조합 => 안녕
-        
-        default 정규화는 NFC(정규화 + 조합)이다.
-        """
-        self.unicode_normalization_type = NormalizationOutputType.NFD
 
     # 자연어 정규화 과정에서 이메일 또는 url 형식으로 비속어를 작성 시 탐지하기 어렵기에 사전학습을 통한 자연어 이해성 높이는 방향으로 변경
     # def add_remove_url(self):
@@ -184,11 +160,7 @@ class DataNormalizers():
             # elif code == NormalizationMethod.REMOVE_URL:
             #     sentence = self.__remove_url(sentence)
 
-
-        if self.unicode_normalization_type == NormalizationOutputType.NFC:
             sentence = self.__normalize_UFC(sentence)
-        elif self.unicode_normalization_type == NormalizationOutputType.NFD:
-            sentence = self.__normalize_UFD(sentence)
         return sentence
 
     def filtering_normalize(self, sentence: str) -> str:
