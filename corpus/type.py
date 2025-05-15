@@ -2,7 +2,6 @@ import os
 from typing import Union, Optional
 from enum import Enum, auto
 import numpy
-import torch
 
 # enum class - _정리
 class NormalizationMethod(Enum):

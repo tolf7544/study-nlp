@@ -73,13 +73,13 @@ def test_tokenizer_train():
 
 def test_tokenizer():
     tokenizer = JamoTokenizer("./tokenizer/data/vocab.json")
-    x= tokenizer.h2hcj("안녕하세요dddsa애dhjdjdkosadjaㅐ3ㄱ -2935 0ㅍㅁ제아-430=2=1`24134--1934 0=-934-90=248 0=2. 반갑습니다!")
+    x= tokenizer.tokenize("안녕하세요")
     print(x)
-    x = tokenizer.jamo_string_2_h(x)
-    print(x)
+    # x = tokenizer.jamo_string_2_h(x)
+    # print(x)
 if __name__ == '__main__':
     # print("cuda status: ", torch.cuda.is_available())
     # test_Corpus_normalizers()
 
-    # test_tokenizer_train()
-    test_tokenizer()
+    test_tokenizer_train()
+    # test_tokenizer()

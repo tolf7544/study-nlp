@@ -7,7 +7,7 @@ from jamo import j2hcj, h2j, j2h, is_jamo, get_jamo_class, hcj_to_jamo
 from corpus.data_normalizers import DataNormalizers
 from corpus.type import JamoEncodingType, TypePath, NormalizationMethod
 from tokenizer.jamo.vocab import Vocab
-from tokenizer.type import JamoType
+from tokenizer.type import DefaultSpecialToken, JamoList, Jamo, SpecialToken, SpecialTokenSet
 from util import Debug
 
 
@@ -52,7 +52,7 @@ class JamoTokenizer():
     vocab_path: TypePath
     sentence_length: int
     encoding_type: JamoEncodingType
-
+    special_token: SpecialTokenSet
     truncation: bool = False
     padding: bool = False
     normalizer_queue: list[NormalizationMethod]
@@ -66,21 +66,28 @@ class JamoTokenizer():
                  sentence_length: int = 200,
                  padding: bool = False,
                  truncation: bool = False,
+                 special_token: list[SpecialToken] = None,
                  normalizer: list[NormalizationMethod] = None,
                  encoding_type: JamoEncodingType = JamoEncodingType.JAMO_VECTOR,
                  ):
         self.vocab_path = vocab_path
+        self.sentence_length = sentence_length
+
         self.padding = padding
         self.truncation = truncation
-        self.sentence_length = sentence_length
+        self.special_token = [property for property in DefaultSpecialToken ]
+        if special_token is not None:
+            for token in special_token:
+                self.special_token.append(token)
+        
         self.normalizer_queue = normalizer
         self.encoding_type = encoding_type
-        self.dataNormalizer = DataNormalizers()
 
+        self.dataNormalizer = DataNormalizers()
         self.vocab = LoadVocab(vocab_path).load_file()
         self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
 
-    def __h2hcj(self, content) -> list[JamoType]:
+    def __h2hcj(self, content) -> list[Jamo]:
         r"""
         한글 문장 > h2j(자소 단위 정규화) > j2hcj(호환 자모 정규화)
         """
@@ -90,10 +97,10 @@ class JamoTokenizer():
             if char.__len__() < 3:
                 for i in range(3 - char.__len__()):
                     char.append("")
-            result.append(JamoType(char))
+            result.append(Jamo(char))
         return result
 
-    def __jamo_string_2_h(self, jamo_str: list[JamoType]):
+    def __jamo_string_2_h(self, jamo_str: list[Jamo]):
         r"""(3, vocab_length) shape 형태 백터 한글 변형"""
         result = ""
         for char_jamo in jamo_str:
@@ -123,8 +130,12 @@ class JamoTokenizer():
     def __zero_sparse_vector(self):
         ... 
 
-    def tokenize(self, sentence: list[str]):
-        self.dataNormalizer.filtering_normalize(sentence=sentence)
+    def tokenize(self, sentence: list[str]) -> JamoList:
+        x = self.dataNormalizer.filtering_normalize(sentence=sentence)
+        x = self.__h2hcj(x)
+        return x
+    
+    # def combinate()
 
     def encode(self, sentence: str):
         unit_set = set(sentence)

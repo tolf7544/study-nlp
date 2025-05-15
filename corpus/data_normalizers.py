@@ -101,6 +101,13 @@ class DataNormalizers():
         detect_whitespace_begin_or_end_regex = re.compile(r"^( )+|( )+$")
         sentence = detect_whitespace_between_character_regex.sub(" ",sentence)
         sentence = detect_whitespace_begin_or_end_regex.sub("",sentence)
+
+        r"""성조 제거
+        유니코드 정규화 후 성조 단위로 호환 분해 후 String 형태로 출력
+        """
+        sentence= unicodedata.normalize('NFKD', sentence)
+        sentence = ''.join([c for c in sentence if not unicodedata.combining(c)]) 
+        
         return sentence
 
     def __normalize_UFC(self, sentence: str) -> str:
@@ -109,7 +116,7 @@ class DataNormalizers():
 
         :return: 정규화된 요소가 합쳐진 String
         """
-        result = unicodedata.normalize("NFC", sentence)
+        result = unicodedata.normalize("NFC", result)
         return result
     #파이썬 터미널에서 출력할 때 UFD로 분해된 문장은 합쳐져 출력된다.
     #만약 UFD가 진행되었는지 확인하기 위해서는 문자열의 index에 접근하여 자모단위의 출력이 발생하는 지 확인할 것
@@ -160,7 +167,7 @@ class DataNormalizers():
             # elif code == NormalizationMethod.REMOVE_URL:
             #     sentence = self.__remove_url(sentence)
 
-            sentence = self.__normalize_UFC(sentence)
+        sentence = self.__normalize_UFC(sentence)
         return sentence
 
     def filtering_normalize(self, sentence: str) -> str:
