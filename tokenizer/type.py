@@ -1,18 +1,28 @@
 from enum import Enum
-from typing import Union
+
+import numpy as np
+
 
 class DefaultSpecialToken(Enum):
-    UNKNOWN_TOKEN = 0,
-    PADDING_TOKEN = 1,
-    WHITESPACE_TOKEN = 2
+    PAD = 0,
+    UNK = 1
 
-SpecialToken = str
-SpecialTokenSet = list[Union[DefaultSpecialToken, SpecialToken]]
+class SpecialToken(str):...
+class CustomSpecialToken(str):...
 
-Jamo = list[
+class JamoChar(np.ndarray[
     str,
     str,
     str
-]
+]): ...
 
-JamoList = list[Jamo]
+class JamoCharArray(np.ndarray[JamoChar]):...
+class JamoCharArrayDataset(np.ndarray[JamoCharArray]):...
+
+class JamoVector(np.ndarray[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray
+]):...
+class JamoMatrix(np.ndarray[JamoVector]):...
+class JamoMatrixDataset(np.ndarray[JamoMatrix]):...

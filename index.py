@@ -11,6 +11,9 @@ from tokenizer.pre_training import pre_training_tokenizer, load_data
 # process const variable
 ###############################################
 from dotenv import load_dotenv
+
+from tokenizer.type import DefaultSpecialToken
+
 load_dotenv()
 
 contents = [
@@ -80,6 +83,6 @@ def test_tokenizer():
 if __name__ == '__main__':
     # print("cuda status: ", torch.cuda.is_available())
     # test_Corpus_normalizers()
-
-    test_tokenizer_train()
+    print(DefaultSpecialToken._member_names_)
+    # test_tokenizer_train()
     # test_tokenizer()
