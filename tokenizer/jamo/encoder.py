@@ -37,19 +37,14 @@ class JamoTokenizerEncoder:
                                      padding: bool,
                                      truncation: bool) -> JamoMatrix:
         zero_vector_matrix = np.zeros(( sentence_length, 3, self.vocab.length), dtype=np.float64)
-        encoding_loop_count = jamo_char_array.__len__()
 
         # a: 제한 길이가 입력 값 길이 보다 길때
         # b: padding이 존재할 때
         # c: truncation이 존재 할때
         # a + b
         # a' + c
-
-        if (sentence_length > encoding_loop_count and padding) or (sentence_length < encoding_loop_count and truncation):
-            encoding_loop_count = sentence_length
-
-        for i in range(encoding_loop_count):
-            if i > jamo_char_array.__len__()-1 and padding:
+        for i in range(sentence_length):
+            if i > jamo_char_array.__len__()-1:
                 zero_vector_matrix[i] = self.zero_one_hot_vector()
             else:
                 zero_vector_matrix[i] = self.__encode_one_hot_vector(jamo_char_array[i])

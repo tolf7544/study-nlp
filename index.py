@@ -75,9 +75,9 @@ def test_tokenizer_train():
 
 def test_tokenizer():
     tokenizer = JamoTokenizer("./tokenizer/data/vocab.json")
-    x= tokenizer.tokenize(["안녕하세요","qksrㅂㅈ암ㄴ반가워요"])
-
-    x = tokenizer.encode(x)
+    x= tokenizer.tokenize(["안녕하", "안"])
+    print(x)
+    x = tokenizer.encode(x, sentence_length=3, truncation=True)
     x = tokenizer.decode(x)
     x = tokenizer.merge_token(x, False)
     print(x)

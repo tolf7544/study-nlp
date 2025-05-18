@@ -1,6 +1,3 @@
-from networkx.algorithms.approximation.ramsey import ramsey_R2
-from numpy import ndarray, dtype, object_, floating
-from numpy._typing import _64Bit
 from typing_extensions import Unpack
 
 import json
@@ -95,21 +92,21 @@ class JamoTokenizer:
         self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
         self.sentence_length = 200
         self.maximum_sentence_length = 0
-
     def __h2hcj(self, jamo_char) -> JamoCharArray:
         r"""
         한글 문장 > h2j(자소 단위 정규화) > j2hcj(호환 자모 정규화)
         """
         result = []
 
-        if len(jamo_char) > self.maximum_sentence_length:
-            self.maximum_sentence_length = len(jamo_char)
         for char in jamo_char:
             char = list(j2hcj(h2j(char)))
             if char.__len__() < 3:
                 for i in range(3 - char.__len__()):
                     char.append(DefaultSpecialToken._member_names_[0])  # padding은 0번째에 위치함
             result.append(char)
+
+        if jamo_char.__len__() > self.maximum_sentence_length:
+            self.maximum_sentence_length= jamo_char.__len__()
         return result
 
     def __jamo_string_2_h(self, jamo_array: JamoCharArray, is_hide_token: bool) -> str:
@@ -124,10 +121,8 @@ class JamoTokenizer:
                         char_jamo[i] = ""
                 result += j2h(*char_jamo)
             else:
-                if not is_hide_token or not DefaultSpecialToken._member_names_.count(char_jamo[0]) > 0:
+                if not is_hide_token or not char_jamo[0] in DefaultSpecialToken._member_names_:
                     result += char_jamo[0]
-
-
         return result
 
     def add_jamo_from_corpus(self, corpus: list[str]):
@@ -170,12 +165,11 @@ class JamoTokenizer:
             self.debug.unexpected_error(
                 "sentences argument must be JamoVector or JamoVectorDataset. use this method after processing \"JamoTokenizer.tokenize()\" ")
             return None
-
-        if len(sentences[0]) == 3:
+        print("sentences")
+        if len(sentences[0]) == 3 and not isinstance(sentences[0][0], np.ndarray):
             sentences = [sentences]
 
         for i, single_sentence in enumerate(sentences):
-
             sentences[i] = self.__jamo_string_2_h(JamoCharArray(single_sentence), is_hide_token)
 
         return sentences
@@ -186,24 +180,22 @@ class JamoTokenizer:
                padding: bool = False,
                truncation: bool = False) -> Optional[JamoMatrixDataset]:
 
-        if self.sentence_length and self.truncation:
-            maximum_row_length = self.sentence_length
-        else:
-            maximum_row_length = self.maximum_sentence_length
-
         if len(sentences[0]) != 3 and len(sentences[0][0]) != 3:
             self.debug.unexpected_error(
                 "sentences argument must be JamoVector or JamoVectorDataset. use this method after processing \"JamoTokenizer.tokenize()\" ")
             return None
 
-        if len(sentences[0]) == 3:
+        if len(sentences[0]) == 3 and not isinstance(sentences[0][0], list):
             sentences = [sentences]
 
-        encoded_vector = np.zeros((len(sentences), maximum_row_length, 3, self.vocab.length), dtype=np.float64)
+        if not truncation:
+            sentence_length = self.maximum_sentence_length
+
+        encoded_vector = np.zeros((len(sentences), sentence_length, 3, self.vocab.length), dtype=np.float64)
         for i in range(sentences.__len__()):
             encoded_vector[i] = self.__jamo_tokenizer_encoder.encode_one_hot_vector_matrix(
                 jamo_char_array=sentences[i],
-                sentence_length=maximum_row_length,
+                sentence_length=sentence_length,
                 padding=padding,
                 truncation=truncation)
         return  encoded_vector
@@ -219,7 +211,6 @@ class JamoTokenizer:
             return None
         if sentences.shape[1] == 3 and sentences.shape[2] == self.vocab.length:
             sentences = [sentences]
-
         decoded_vector = np.zeros((sentences.shape[0],), dtype=np.object_)
         for i in range(sentences.__len__()):
             decoded_vector[i] = self.__jamo_tokenizer_decoder.decode_one_hot_vector_matrix(sentences[i])
