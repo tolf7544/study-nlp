@@ -70,19 +70,24 @@ def test_Corpus_normalizers():
 
 
 def test_tokenizer_train():
-    corpus = DataNormalizers()
     with open("./tokenizer/data/test_corpus/corpus.txt", encoding="utf-8", mode="r") as f:
         JamoTokenizer().add_jamo_from_corpus(f.readlines())
 
 def test_tokenizer():
     tokenizer = JamoTokenizer("./tokenizer/data/vocab.json")
-    x= tokenizer.tokenize("안녕하세요")
+    x= tokenizer.tokenize(["안녕하세요","qksrㅂㅈ암ㄴ반가워요"])
+
+    x = tokenizer.encode(x)
+    x = tokenizer.decode(x)
+    x = tokenizer.merge_token(x, False)
     print(x)
     # x = tokenizer.jamo_string_2_h(x)
     # print(x)
 if __name__ == '__main__':
     # print("cuda status: ", torch.cuda.is_available())
     # test_Corpus_normalizers()
-    print(DefaultSpecialToken._member_names_)
-    # test_tokenizer_train()
-    # test_tokenizer()
+    # print(DefaultSpecialToken._member_names_)
+    test_tokenizer_train()
+    test_tokenizer()
+
+

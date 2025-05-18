@@ -195,8 +195,9 @@ class DataNormalizers:
     def compute_normalize(self) -> Corpus:
         r"""사전 입력된 말뭉치를 대상으로 정규화 대기열에 입력된 정규화 함수코드를 기준으로 정규화 진행"""
 
-        self.debug.debug_print(
-            "[ warning ] corpus length is 0. compute_normalize() will not do anything.\n you should use .set_corpus(). ( if you want normalized not using .set_corpus(), using .filtering_normalized(sentence: str) )")
+        if self.corpus.__len__() == 0:
+            self.debug.debug_print(
+                "[ warning ] corpus length is 0. compute_normalize() will not do anything.\n you should use .set_corpus(). ( if you want normalized not using .set_corpus(), using .filtering_normalized(sentence: str) )")
         for (i, sentence) in enumerate(self.corpus):
             if isinstance(sentence, str) is False:  # 문자열이 아닌 데이터는 따로 출력하여 log파일 생성하도록 해야함
                 self.debug.debug_print(f"**pass** {sentence}")

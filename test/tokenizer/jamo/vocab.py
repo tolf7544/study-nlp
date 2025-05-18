@@ -100,7 +100,7 @@ class VocabTest():
         res = self.__vocab.token_2_key("f")
         self.total_case_count += 1
         self.method_case_count += 1
-        if res != DefaultSpecialToken.UNK:
+        if res != DefaultSpecialToken._UNK:
             self.method_issue_count += 1
         printTestLog("DefaultSpecialToken.UNKNOWN_TOKEN", res)
 
@@ -117,7 +117,7 @@ class VocabTest():
         res = self.__vocab.key_2_token(8)
         self.total_case_count += 1
         self.method_case_count += 1
-        if res != DefaultSpecialToken.UNK:
+        if res != DefaultSpecialToken._UNK:
             self.method_issue_count += 1
         printTestLog("DefaultSpecialToken.UNKNOWN_TOKEN", self.__vocab.key_2_token(8))
 

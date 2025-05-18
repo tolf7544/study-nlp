@@ -1,27 +1,32 @@
+from networkx.algorithms.approximation.ramsey import ramsey_R2
+from numpy import ndarray, dtype, object_, floating
+from numpy._typing import _64Bit
 from typing_extensions import Unpack
 
 import json
 import os
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 import numpy as np
-from jamo import j2hcj, h2j, j2h
+from jamo import j2hcj, h2j, j2h, is_jamo
 
 from corpus.data_normalizers import DataNormalizers
 from corpus.type import JamoEncodingType, Path, NormalizerOption
+from tokenizer.jamo.decoder import JamoTokenizerDecoder
+from tokenizer.jamo.encoder import JamoTokenizerEncoder
 from tokenizer.jamo.vocab import Vocab
 from tokenizer.type import JamoMatrix, \
-    JamoMatrixDataset, CustomSpecialToken, DefaultSpecialToken, JamoCharArray, JamoCharArrayDataset
+    JamoMatrixDataset, DefaultSpecialToken, JamoCharArray, JamoCharArrayDataset
 from util import Debug
 
 
 class LoadVocab:
     vocab_path: Path
     debug: Debug
+
     def __init__(self, _vocab_path: Optional[Path] = None):
         self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
         self.vocab_path = _vocab_path
-
 
     def __check_vocab_exist(self) -> bool:
         r"""path에 vocab이 존재할 시 true를 리턴하며 오류 발생 또는 아닐 시 출력값과 False를 리턴합니다."""
@@ -37,7 +42,8 @@ class LoadVocab:
         _key_vocab: dict = {}
 
         if self.__check_vocab_exist() is False:
-            self.debug.opt_debug_print(f"vocab is not exist in next location ( this message is not error )\ninput path: {self.vocab_path}")
+            self.debug.opt_debug_print(
+                f"vocab is not exist in next location ( this message is not error )\ninput path: {self.vocab_path}")
             return {}
 
         with open(self.vocab_path, "r", encoding="utf-8") as file:
@@ -56,6 +62,7 @@ class LoadVocab:
 class JamoTokenizer:
     vocab_path: Path
     sentence_length: int
+    maximum_sentence_length: int
     encoding_type: JamoEncodingType
     truncation: bool = False
     padding: bool = False
@@ -63,53 +70,63 @@ class JamoTokenizer:
     r"""입력된 순서대로 정규화를 진행하며 각 과정은 고유한 특성(중복x)을 갖는다. first input first out"""
 
     vocab: Vocab
-    dataNormalizer: DataNormalizers
+    data_normalizer: DataNormalizers
     debug: Debug
+
+    __jamo_tokenizer_encoder: JamoTokenizerEncoder
+    __jamo_tokenizer_decoder: JamoTokenizerDecoder
+
     def __init__(self,
                  vocab_path: Path = "./vocab.json",
-                 sentence_length: int = 200,
-                 padding: bool = False,
-                 truncation: bool = False,
-                 special_token: list[CustomSpecialToken] = None,
+                 special_token: list[str] = None,
                  normalizer: list[Unpack[NormalizerOption]] = None,
                  encoding_type: JamoEncodingType = JamoEncodingType.JAMO_VECTOR,
                  ):
         self.vocab_path = vocab_path
-        self.sentence_length = sentence_length
-
-        self.padding = padding
-        self.truncation = truncation
-
         self.vocab = Vocab(LoadVocab(vocab_path).load_file(), special_token)
 
         self.normalizer_queue = normalizer
+        self.data_normalizer = DataNormalizers()
+
         self.encoding_type = encoding_type
+        self.__jamo_tokenizer_encoder = JamoTokenizerEncoder(self.vocab)
+        self.__jamo_tokenizer_decoder = JamoTokenizerDecoder(self.vocab)
 
-        self.dataNormalizer = DataNormalizers()
         self.debug = Debug(*eval(os.environ.get('DEBUG_OPTION')))
+        self.sentence_length = 200
+        self.maximum_sentence_length = 0
 
-    def __h2hcj(self, content) -> JamoCharArray:
+    def __h2hcj(self, jamo_char) -> JamoCharArray:
         r"""
         한글 문장 > h2j(자소 단위 정규화) > j2hcj(호환 자모 정규화)
         """
-        result: list = []
-        for char in content:
-            char = np.array(j2hcj(h2j(char)))
+        result = []
+
+        if len(jamo_char) > self.maximum_sentence_length:
+            self.maximum_sentence_length = len(jamo_char)
+        for char in jamo_char:
+            char = list(j2hcj(h2j(char)))
             if char.__len__() < 3:
                 for i in range(3 - char.__len__()):
-                    np.append(char, self.vocab.get(DefaultSpecialToken._member_names_[0])) # padding은 0번째에 위치함
-            np.append(result, char)
-        return JamoCharArray(result)
+                    char.append(DefaultSpecialToken._member_names_[0])  # padding은 0번째에 위치함
+            result.append(char)
+        return result
 
-    def __jamo_string_2_h(self, jamo_array: JamoCharArray) -> str:
+    def __jamo_string_2_h(self, jamo_array: JamoCharArray, is_hide_token: bool) -> str:
         r"""( 3, jamo ) shape 형태 백터 한글 변형"""
-        result:str = ""
+        char_jamo: np.ndarray[str, str, str]
+        result: str = ""
+
         for char_jamo in jamo_array:
-            print(*char_jamo)
-            if char_jamo[0].__len__() == 1 and char_jamo[1].__len__() == 1: # 초성 중성이 존재할 시에만 j2h 메서드 사용
+            if char_jamo[0].__len__() == 1 and char_jamo[1].__len__() == 1  and is_jamo(char_jamo[0]):  # 초성 중성이 존재할 시에만 j2h 메서드 사용
+                for i in range(char_jamo.__len__()):
+                    if char_jamo[i] == DefaultSpecialToken._member_names_[0]:
+                        char_jamo[i] = ""
                 result += j2h(*char_jamo)
             else:
-                result += char_jamo[0]
+                if not is_hide_token or not DefaultSpecialToken._member_names_.count(char_jamo[0]) > 0:
+                    result += char_jamo[0]
+
 
         return result
 
@@ -117,57 +134,111 @@ class JamoTokenizer:
         r"""add jamo to vocab"""
 
         for content in corpus:
-            content = self.dataNormalizer.filtering_normalize(content)
+            content = self.data_normalizer.filtering_normalize(content)
             content = j2hcj(h2j(content))
             for char in list(set(content)):
-                self.vocab.add(char) # has()문이 내장되어 있음.
+                self.vocab.add(char)  # has()문이 내장되어 있음.
 
         self.debug.opt_debug_print("successfully added")
         self.debug.opt_debug_print(self.vocab)
 
         if os.path.exists(self.vocab_path):
             with open(self.vocab_path, encoding="utf-8", mode="w") as f:
-                f.write(json.dumps(self.vocab, ensure_ascii= False))
+                f.write(json.dumps(self.vocab, ensure_ascii=False))
         else:
             with open("./tokenizer/data/vocab.json", encoding="utf-8", mode="w") as f:
-                f.write(json.dumps(self.vocab, ensure_ascii= False))
+                f.write(json.dumps(self.vocab, ensure_ascii=False))
 
+    def tokenize(self, sentences: Union[Optional[str], list[str]]) \
+            -> Optional[list[list[str]]]:
 
-    def __encoding_one_hot_vector(self):
-        ...
-    def __create_zero_vector(self):
-        ...
+        if not isinstance(sentences, list) and not isinstance(sentences, str):
+            self.debug.unexpected_error("sentences args type must be str or list[str]")
+            return None
 
+        if isinstance(sentences, str):
+            sentences = [sentences]
 
-    def tokenize(self, sentence: Union[Optional[str], list[str]]) -> Union[Optional[JamoCharArray], JamoCharArrayDataset]:
-        if isinstance(sentence, JamoCharArrayDataset):
-            self.dataNormalizer.set_corpus(sentence)
-            sentence = self.dataNormalizer.compute_normalize()
+        self.data_normalizer.set_corpus(sentences)
+        sentences = self.data_normalizer.compute_normalize()
+        sentences = [self.__h2hcj(sentence) for sentence in sentences]
+
+        return sentences
+
+    def merge_token(self, sentences: Union[Optional[JamoCharArrayDataset], JamoCharArray], is_hide_token: bool = True):
+        if len(sentences[0]) != 3 and len(sentences[0][0]) != 3:
+            self.debug.unexpected_error(
+                "sentences argument must be JamoVector or JamoVectorDataset. use this method after processing \"JamoTokenizer.tokenize()\" ")
+            return None
+
+        if len(sentences[0]) == 3:
+            sentences = [sentences]
+
+        for i, single_sentence in enumerate(sentences):
+
+            sentences[i] = self.__jamo_string_2_h(JamoCharArray(single_sentence), is_hide_token)
+
+        return sentences
+
+    def encode(self,
+               sentences: Union[Optional[JamoCharArray], JamoCharArrayDataset],
+               sentence_length: int = 200,
+               padding: bool = False,
+               truncation: bool = False) -> Optional[JamoMatrixDataset]:
+
+        if self.sentence_length and self.truncation:
+            maximum_row_length = self.sentence_length
         else:
-            sentence = self.dataNormalizer.filtering_normalize(str(sentence))
-        sentence = self.__h2hcj(sentence)
-        return sentence
-    
-    def merge_token(self, sentence: Union[Optional[JamoCharArrayDataset], JamoCharArray]):
-        if isinstance(sentence, JamoCharArray):
-            sentence = self.__jamo_string_2_h(sentence)
-        else:
-            for i, single_sentence in enumerate(sentence):
-                sentence[i] = self.__jamo_string_2_h(JamoCharArray(single_sentence))
-        return sentence
+            maximum_row_length = self.maximum_sentence_length
 
-    def encode(self, sentence: Union[Optional[JamoMatrix],JamoMatrixDataset]):
-        if isinstance(sentence, JamoMatrix):
-            ...
-        elif isinstance(sentence, JamoMatrixDataset):
-            ...
-        else:
-            self.debug.unexpected_error("sentence argument must be JamoVector or JamoVectorDataset. you must use method \"JamoTokenizer.tokenize\" before sentence encoding.")
+        if len(sentences[0]) != 3 and len(sentences[0][0]) != 3:
+            self.debug.unexpected_error(
+                "sentences argument must be JamoVector or JamoVectorDataset. use this method after processing \"JamoTokenizer.tokenize()\" ")
+            return None
 
-        # unit_set = set()
-        # unit_key_pair = []
-        #
-        # for word in unit_set:
-        #     self.vocab.token_2_key(word)
+        if len(sentences[0]) == 3:
+            sentences = [sentences]
 
+        encoded_vector = np.zeros((len(sentences), maximum_row_length, 3, self.vocab.length), dtype=np.float64)
+        for i in range(sentences.__len__()):
+            encoded_vector[i] = self.__jamo_tokenizer_encoder.encode_one_hot_vector_matrix(
+                jamo_char_array=sentences[i],
+                sentence_length=maximum_row_length,
+                padding=padding,
+                truncation=truncation)
+        return  encoded_vector
 
+    def decode(self,
+               sentences: Union[Optional[JamoMatrix], JamoMatrixDataset]) \
+            -> Optional[JamoMatrixDataset]:
+
+        if ((sentences.shape[1] != 3 and sentences.shape[2] != 3)
+                or (sentences.shape[2] != self.vocab.length and sentences.shape[3] != self.vocab.length)):
+            self.debug.unexpected_error(
+                "input data type is JamoMatrix or JamoMatrixDataset,  use this method after processing \"JamoTokenizer.encode()\" or if you same shape of arguments, change type force ")
+            return None
+        if sentences.shape[1] == 3 and sentences.shape[2] == self.vocab.length:
+            sentences = [sentences]
+
+        decoded_vector = np.zeros((sentences.shape[0],), dtype=np.object_)
+        for i in range(sentences.__len__()):
+            decoded_vector[i] = self.__jamo_tokenizer_decoder.decode_one_hot_vector_matrix(sentences[i])
+        return decoded_vector
+
+    def __call__(self,
+                 sentences: Union[np.ndarray, Union[str, list[str]]],
+                 sentence_length: int = 200,
+                 padding: bool = True,
+                 truncation: bool = True,
+                 normalizer: list[Unpack[NormalizerOption]] = None,
+                 encoding_type: JamoEncodingType = JamoEncodingType.JAMO_VECTOR):
+
+        self.sentence_length = sentence_length
+        self.padding = padding
+        self.truncation = truncation
+        self.normalizer_queue = normalizer
+        self.encoding_type = encoding_type
+
+        x = self.tokenize(sentences)
+        x = self.encode(x, self.sentence_length, self.padding, self.truncation)
+        return x
