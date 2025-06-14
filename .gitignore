@@ -1,5 +1,5 @@
 corpus/__pycache__/corpus_data.cpython-39.pyc
-tokenizer/__pycache__/pre_training.cpython-39.pyc
+jamo_tokenizer/__pycache__/pre_training.cpython-39.pyc
 /corpus/test_data/type1.csv
 corpus/__pycache__/custom_normalizers.cpython-39.pyc
 corpus/__pycache__/data_loader.cpython-39.pyc
@@ -8,7 +8,7 @@ corpus/__pycache__/type.cpython-39.pyc
 __pycache__/log.cpython-39.pyc
 __pycache__/util.cpython-39.pyc
 corpus/__pycache__/data_normalizers.cpython-39.pyc
-tokenizer/__pycache__/type.cpython-39.pyc
-tokenizer/jamo/__pycache__/tokenizer.cpython-39.pyc
-tokenizer/jamo/__pycache__/vocab.cpython-39.pyc
+jamo_tokenizer/__pycache__/type.cpython-39.pyc
+jamo_tokenizer/jamo/__pycache__/tokenizer.cpython-39.pyc
+jamo_tokenizer/jamo/__pycache__/vocab.cpython-39.pyc
 .idea/inspectionProfiles/profiles_settings.xml
