@@ -1,3 +1,4 @@
+import inspect
 import os.path
 from typing import Literal
 
@@ -39,7 +40,15 @@ def test_save():
     log_debug_is_save_false.save(file_name="logger", function_name="test_func", reason="테스트", data="테스트 데이터5")
     log_debug_is_save_false.save(file_name="logger", function_name="test_func", reason="테스트", data="테스트 데이터6")
     print("\n")
-    
+
+def test_exit():
+    log_debug.exit_log("test_file", "test_func", "test_reason")
+
+def test_warn():
+    log_debug.warn_display("test_file", inspect.currentframe().f_code.co_name, "test_reason")
 if __name__ == '__main__':
-    #test_display() 통과
-    test_save()
+    #test_display() #통과
+    # test_save() #통과
+    # test_exit() #통과
+    # test_warn() #통과
+    pass
