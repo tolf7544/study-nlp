@@ -1,8 +1,6 @@
 import inspect
-import os.path
-from typing import Literal
 
-from logger.logger import Log
+from util.logger import Log
 
 log_debug = Log(domain_name="test", mode="debug", is_display=True, is_save=True)
 log_common = Log(domain_name="test", mode="common", is_display=True, is_save=True)
