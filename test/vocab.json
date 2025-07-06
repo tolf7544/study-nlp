@@ -1,0 +1,1 @@
+{"special_token": {"pad": {"token_id": 0, "using_token_name": "<pad>", "is_default": true}, "unk": {"token_id": 1, "using_token_name": "<unk>", "is_default": true}, "<mask>": {"token_id": 2, "is_default": false}}, "vocab": {"<pad>": 0, "<unk>": 1, "<mask>": 2, "ㅏ": 3, "ㄱ": 4, "ㄴ": 5, "ㄷ": 6, "ㄹ": 7, "ㅁ": 8, "1": 9, "2": 10}}
