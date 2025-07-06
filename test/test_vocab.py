@@ -1,4 +1,4 @@
-from jamo_tokenizer_py.vocab import Vocab
+from tokenizer.vocab import Vocab
 
 test_dict = {"ㄱ":1, "ㄴ": 2, "ㄷ": 3, "<pad>": 4, "<unk>": 5, "<mask>": 6}
 
@@ -6,7 +6,7 @@ def test_vocab():
     sentence = "ㄱㄴㄷㄹ"
 
     encoded_contents = [1,2,3,5,4,4,4]
-    vocab = Vocab(test_dict, padding_token=4, unknown_token=5, masking_token=6)
+    vocab = Vocab(test_dict, padding_token=4, unknown_token=5)
 
     print("vocab.get_id(char)")
     for char in sentence:
