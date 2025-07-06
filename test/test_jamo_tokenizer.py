@@ -7,7 +7,7 @@ from util.type import JamoSet
 
 test_dict = {"ㄱ":0, "ㄴ": 1, "ㄷ": 2, "<pad>": 3, "<unk>": 4, "<mask>": 5, "ㅇ": 6, "ㅏ": 7, "ㄹ": 8, "ㅁ": 9}
 encoded_contents = [1, 2, 3, 5, 4, 4, 4]
-sentence = "가나다라마"
+sentence = "가나다라마12"
 
 # vocab = Vocab(test_dict,padding_token="<pad>", unknown_token="<unk>")
 tokenizer_builder = TokenizerBuilder()
@@ -43,7 +43,7 @@ def test_2(): # normalize / tokenize
 def test_2_5(s):
 
     print("normal test - len: 10, pad: F, tru: F")
-    s = tokenizer.tokenize(sentence=s, length=10, padding=False, truncation=False )
+    s = tokenizer.tokenize(sentence=s, length=10, padding=True, truncation=False )
     print("형태소 분해: ", s)
     return s
 
@@ -57,7 +57,8 @@ def test_3():
 def test_4():
     a = test_2_5(sentence)
     print("normal test - encode")
-    a1 = tokenizer.encode(token_list=a)
+    print(tokenizer.encode(token_list=a, return_attention_mask=True))
+    a1 = tokenizer.encode(token_list=a)["encode"]
     print("encode result: ",end="")
     print(np.array(a1))
 
@@ -97,8 +98,8 @@ if __name__ == '__main__':
     # test_1() # 성공 # 빌더 성공
     # test_2() # 성공 # 빌더 성공
     # test_3() # 성공 # 빌더 성공
-    # test_4() # 성공 # 빌더 성공
+    test_4() # 성공 # 빌더 성공
     # test_5() # 성공 # 빌더 성공
     # test_6() # 성공 # 빌더 성공
-    test_7()
+    # test_7() # 성공
     pass

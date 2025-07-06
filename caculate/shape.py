@@ -231,7 +231,7 @@ def search_conv_parameter(kernel: int, before_out: int, range_operator_group: Ca
 
 
 if __name__ == "__main__":
-    jamo_conv_transformer_model()
+    #jamo_conv_transformer_model()
     # params_set_array = search_conv_parameter(16, 512, lambda x: 512 > x)
     # if params_set_array.__len__() > 0:
     #     for params_set in params_set_array:
@@ -265,17 +265,17 @@ if __name__ == "__main__":
     # k = n 일때 모든 원소를 동일하게 적용될 경우
     # k - s = p
 
-    # x = torch.zeros(size=(32, 2 ** 10), dtype=torch.int)
-    # embedding = torch.nn.Embedding(num_embeddings=2 ** 10, embedding_dim=512, dtype=torch.float32, sparse=True)
+    x = torch.zeros(size=(32, 2 ** 10, 3), dtype=torch.int)
+    embedding = torch.nn.Embedding(num_embeddings=2 ** 10, embedding_dim=256, dtype=torch.float32, sparse=True)
     # # conv2d = torch.nn.Conv2d(in_channels=1024, out_channels=512, kernel_size=8, padding=3, stride=2)
     # conv1d_1 = torch.nn.Conv1d(in_channels=1024, out_channels=512, kernel_size=8, padding=3, stride=2)
     # linear_1 = torch.nn.Linear(256, 1)
     # softmax_1 = torch.nn.Softmax(1)
     # # conv1d_2 = torch.nn.Conv1d(in_channels=512, out_channels=512, kernel_size=128, padding=0, stride=1, groups=512)
     # # conv1d_2_1 = torch.nn.Conv1d(in_channels=512, out_channels=512, kernel_size=1, padding=0, stride=1)
-    # x = embedding(x)
+    x = embedding(x)
     # x = conv1d_1(x)
-    # print(x.shape)
+    print(x.shape)
     # x1 = linear_1(x)
     # print(x1.shape)
     # x1 = softmax_1(x1)

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Union
+from typing import Union, Literal
 
 import numpy as np
 from jamo import is_jamo
@@ -8,7 +8,7 @@ from tokenizer.jamo_converter import JamoConvertor
 from tokenizer.normalizer import Normalizer
 from tokenizer.vocab import Vocab
 from util.logger import Log
-from util.type import JamoSet, SparseList, SparseSet
+from util.type import JamoSet
 
 
 class JamoTokenizer:
@@ -92,43 +92,82 @@ class JamoTokenizer:
                                                                 unknown_token=self.vocab.unk[0])
         return origin_sentence
 
-    def __zero_one_hot_vector(self, length: int):
-        return [0 for _ in range(length)]
-
-    def __one_hot_vector(self, token: str):
-        one_hot_vector = self.__zero_one_hot_vector(self.vocab.length())
-
+    def __get_id_info(self, token: str):
+        r"""
+        down-scale은 알파벳, 특수문자와 같이 한글에서 하나의 문자를 이루는 자모와 같은 정보를 가지고 있으나
+        하나의 문자로 모두 표현되지 않는 요소 이기에 자모와 자모외의 문자(ex. 알파벳)을 동등한 정보로 처리하기 위해
+        정보를 down_scaling하는 여부를 출력요소에 포함 시킨다.
+        """
         if self.vocab.pad[0] == token:
-            return one_hot_vector
+            return {
+                "id": self.vocab.pad[1],
+                "is_down_scaling": False,
+                "is_padding": True,
+            }
 
         i = self.vocab.get_id(token)
-        if is_jamo(token) or i == self.vocab.unk[1]:
-            one_hot_vector[i] = np.float64(1)
+        if isinstance(token, int) == True:
+            return {
+                "id": i,
+                "is_down_scaling": True
+            }
+        elif is_jamo(token) or i == self.vocab.unk[1]:
+            return {
+                "id": i,
+                "is_down_scaling": False
+            }
         else:
-            one_hot_vector[i] = np.float64(1 / 3)
-        return one_hot_vector
+            return {
+                "id": i,
+                "is_down_scaling": True
+            }
 
-    def encode(self, token_list: list[JamoSet]) -> list[SparseSet]:
+    def encode(self, token_list: list[JamoSet], return_attention_mask: bool = False) -> object:
+        result = {}
+        down_scaling_mask = []
+        attention_mask = []
+        attention_branch_index: int = 0
+        encode = []
         for i in range(len(token_list)):
-            token_list[i][0] = self.__one_hot_vector(token_list[i][0])
-            token_list[i][1] = self.__one_hot_vector(token_list[i][1])
-            token_list[i][2] = self.__one_hot_vector(token_list[i][2])
-        return list[SparseSet](token_list)
+            encode.append([])
+            if token_list[i][0] == self.vocab.pad[0]:
+                encode[i] = [self.vocab.pad[1],
+                             self.vocab.pad[1],
+                             self.vocab.pad[1]]
+                if attention_branch_index == 0:
+                    attention_branch_index = i
+                down_scaling_mask.append(0)
+                continue
 
-    def __get_token(self, one_hot_vector: SparseList):
-        token_id: int = self.vocab.pad[1]
-        for index, location_point in enumerate(one_hot_vector):
-            if location_point > 0:
-                token_id = index
-                break
-        return self.vocab.get_token(token_id)
+            for j in range(3):
+                id_info = self.__get_id_info(token_list[i][j])
+                encode[i].append(id_info["id"])
+                if j == 0:
+                    if id_info["is_down_scaling"] == True:
+                        down_scaling_mask.append(1)
+                    else:
+                        down_scaling_mask.append(0)
 
-    def decode(self, token_id_list: list[SparseSet]) -> list[JamoSet]:
+        result["encode"] = encode
+        result["down_scaling_mask"] = down_scaling_mask
+        if return_attention_mask == True:
+            for i in range(len(token_list)):
+                if i >= attention_branch_index:
+                    attention_mask.append(0)
+                else:
+                    attention_mask.append(1)
+            result["attention_mask"] = attention_mask
+        return result
+
+
+    def decode(self, token_id_list: list[list[int]]) -> list[JamoSet]:
+        decode = []
         for i in range(len(token_id_list)):
-            token_id_list[i][0] = self.__get_token(token_id_list[i][0])
-            token_id_list[i][1] = self.__get_token(token_id_list[i][1])
-            token_id_list[i][2] = self.__get_token(token_id_list[i][2])
-        return list[JamoSet](token_id_list)
+            decode.append([])
+            decode[i].append(self.vocab.get_token(token_id_list[i][0]))
+            decode[i].append(self.vocab.get_token(token_id_list[i][1]))
+            decode[i].append(self.vocab.get_token(token_id_list[i][2]))
+        return list[JamoSet](decode)
 
     def save_vocab(self, path: Union[str, os.PathLike[str]] = None) -> None:
         special_token = {}

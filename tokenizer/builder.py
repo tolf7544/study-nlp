@@ -92,7 +92,7 @@ class TokenizerBuilder:
         self.__normalize(sentence="test_sentence")  # normalizer test, 문제 발생 시 error 제공
         return self
 
-    def build_tokenizer(self) -> Vocab:
+    def build_tokenizer(self) -> JamoTokenizer:
         vocab_dict = {}
 
         for token in self.special_token:
