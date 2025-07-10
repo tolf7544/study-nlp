@@ -7,12 +7,11 @@ sentence_corpus = ["안녕하세요!!!"]
 def test_1():
     vocab_builder = TokenizerBuilder()
 
-    v = vocab_builder.set_special_token().set_corpus(sentence_corpus).set_normalizing().build_tokenizer()
+    tokenizer = vocab_builder.set_special_token().set_corpus(sentence_corpus).set_normalizing().build_tokenizer()
 
-    tokenizer = JamoTokenizer(v)
     x = tokenizer.tokenize("안녕하세요###@$!&$%#", length=10, padding=True, truncation=False)
     print(tokenizer.vocab.get_vocab())
-    x = tokenizer.encode(x)
+    x = tokenizer.encode(x)["encode"]
     print(x)
     x = tokenizer.decode(x)
     print(x)
@@ -20,5 +19,5 @@ def test_1():
     print(x)
 
 if __name__ == '__main__':
-    #test_1() # 통과
+    test_1() # 통과
     pass
