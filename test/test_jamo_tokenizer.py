@@ -7,7 +7,7 @@ from util.type import JamoSet
 
 test_dict = {"ㄱ":0, "ㄴ": 1, "ㄷ": 2, "<pad>": 3, "<unk>": 4, "<mask>": 5, "ㅇ": 6, "ㅏ": 7, "ㄹ": 8, "ㅁ": 9}
 encoded_contents = [1, 2, 3, 5, 4, 4, 4]
-sentence = "가나다라마12"
+sentence = "가 나다라마12"
 
 # vocab = Vocab(test_dict,padding_token="<pad>", unknown_token="<unk>")
 tokenizer_builder = TokenizerBuilder()

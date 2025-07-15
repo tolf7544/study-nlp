@@ -231,11 +231,14 @@ def search_conv_parameter(kernel: int, before_out: int, range_operator_group: Ca
 
 
 if __name__ == "__main__":
+    jamo_conv_transformer_model()
 
+    pass
     def func(c, k, s, p):
         return (c + 2 * p - 1 * (k - 1) - 1) / s + 1
     print("h.",func(3, 3, 3, 0))
     print("w.",func(256, 5, 1, 2))
+
     #jamo_conv_transformer_model()
     # params_set_array = search_conv_parameter(16, 512, lambda x: 512 > x)
     # if params_set_array.__len__() > 0:

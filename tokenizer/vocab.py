@@ -65,6 +65,13 @@ class Vocab:
         else:
             return t
 
+    def is_special_token(self, token: str) -> bool:
+        is_none = self.__special_token_dict.get(token)
+        if is_none == None:
+            return False
+        else:
+            return True
+
     def special_token(self) -> dict[str, int]:
         return self.__special_token_dict
 

@@ -28,12 +28,15 @@ class TokenizerBuilder:
         self.normalizer = Normalizer()
 
     def set_special_token(self, special_token: list[str] = None, padding_token: str = "<pad>",
-                          unknown_token: str = "<unk>"):  # return VocabBuilder
+                          unknown_token: str = "<unk>", is_whitespace_special_token: bool = True):  # return VocabBuilder
 
         self.special_token.append(padding_token)
         self.special_token.append(unknown_token)
         self.padding_token = padding_token
         self.unknown_token = unknown_token
+
+        if is_whitespace_special_token == True:
+            self.special_token.append(" ")
 
         if special_token == None or special_token.__len__() == 0:
             return self

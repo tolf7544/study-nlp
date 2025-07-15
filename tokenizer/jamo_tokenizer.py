@@ -102,7 +102,6 @@ class JamoTokenizer:
             return {
                 "id": self.vocab.pad[1],
                 "is_down_scaling": False,
-                "is_padding": True,
             }
 
         i = self.vocab.get_id(token)
@@ -111,7 +110,7 @@ class JamoTokenizer:
                 "id": i,
                 "is_down_scaling": True
             }
-        elif is_jamo(token) or i == self.vocab.unk[1]:
+        elif is_jamo(token) or i == self.vocab.unk[1] or self.vocab.is_special_token(token) == True:
             return {
                 "id": i,
                 "is_down_scaling": False
