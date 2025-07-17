@@ -6,7 +6,7 @@ def test_vocab():
     sentence = "ㄱㄴㄷㄹ"
 
     encoded_contents = [1,2,3,5,4,4,4]
-    vocab = Vocab(test_dict, padding_token=4, unknown_token=5)
+    vocab = Vocab(test_dict, padding_token="<pad>", unknown_token="<unk>")
 
     print("vocab.get_id(char)")
     for char in sentence:
@@ -19,5 +19,6 @@ def test_vocab():
 
     print("vocab.get_vocab()")
     print(vocab.get_vocab())
+
 if __name__ == '__main__':
     test_vocab()

@@ -1,8 +1,8 @@
 import inspect
+import os
+from collections.abc import Callable
 from typing import Any, Union
-
 from jamo import j2hcj, h2j
-
 from tokenizer.jamo_tokenizer import JamoTokenizer
 from tokenizer.normalizer import Normalizer
 from tokenizer.vocab import Vocab
@@ -17,7 +17,7 @@ class TokenizerBuilder:
     corpus: list[str]
     normalizing_queue: list[NormalizerMethod]
     normalizer: Normalizer
-
+    debugging_arr = []
     log = Log(domain_name="VocabBuilder", save_path=".log", mode="debug", is_save=False, is_display=True)
 
     def __init__(self):
@@ -95,13 +95,31 @@ class TokenizerBuilder:
         self.__normalize(sentence="test_sentence")  # normalizer test, 문제 발생 시 error 제공
         return self
 
-    def build_tokenizer(self) -> JamoTokenizer:
-        vocab_dict = {}
+    def __build_vocab_sub_process(self, arr: list[str], norm_func: Callable):
+        from jamo import j2hcj, h2j
 
+        result = []
+        for sentence in arr:
+            sentence = norm_func(sentence)
+            keyword_set = list(set(j2hcj(h2j(sentence))))
+            result.append(keyword_set)
+        return result
+
+    def build_tokenizer(self, vocab_path: Union[str,os.PathLike[str]] = "./vocab.json") -> JamoTokenizer:
+        vocab_dict = {}
+        print("[build tokenizer] add special token to sub vocab....")
         for token in self.special_token:
             vocab_dict[token] = vocab_dict.__len__()
+        print("[build tokenizer] add special token done.")
+        print("[build tokenizer] train vocab start")
+        for i, sentence in enumerate(self.corpus):
+            if i % 100 == 0:
+                print(f"{i} / {self.corpus.__len__()}")
 
-        for sentence in self.corpus:
+            if isinstance(sentence, str) == False:
+                self.debugging_arr.append(sentence)
+                continue
+
             sentence = self.__normalize(sentence)
             keyword_set = list(set(j2hcj(h2j(sentence))))
 
@@ -111,9 +129,14 @@ class TokenizerBuilder:
                     vocab_dict[keyword_set[i]] = vocab_dict.__len__()
                 else:
                     continue
-
+        print("[build tokenizer] train vocab done.")
+        print(f"[ WARN build tokenizer ] not string contents included. \n{self.debugging_arr}")
         vocab = Vocab(vocab_dict=vocab_dict, special_token_list=self.special_token, padding_token=self.padding_token,
                       unknown_token=self.unknown_token, log=self.log)
-        tokenizer = JamoTokenizer(vocab)
+        print("[build tokenizer] vocab instance generated.")
+        print("[build tokenizer] tokenizer instance generated.")
+        tokenizer = JamoTokenizer(vocab, vocab_path=vocab_path)
         tokenizer.save_vocab()
+        print(f"[build tokenizer] vocab file saved. path: {vocab_path}")
+        print("[build tokenizer] process done.")
         return tokenizer

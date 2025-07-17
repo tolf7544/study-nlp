@@ -18,6 +18,10 @@ def test_1():
     x = tokenizer.combine(x)
     print(x)
 
+def test_2():
+    vocab_builder = TokenizerBuilder()
+    tokenizer = vocab_builder.set_special_token().set_corpus(sentence_corpus).set_normalizing().multi_processing()
 if __name__ == '__main__':
-    test_1() # 통과
+    # test_1() # 통과
+    test_2()
     pass

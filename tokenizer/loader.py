@@ -5,7 +5,7 @@ import dask.dataframe as dd
 from dask.bag import Bag
 
 
-class DataLoader:
+class DataReader:
     block_size: int
 
     #2**31 = 2gb
@@ -38,5 +38,5 @@ class DataLoader:
 
         if not is_header:
             header = None
-        temp = dask.dataframe.DataFrame(dd.read_json(path, self.block_size, header=header))
+        temp = dask.dataframe.DataFrame(dd.read_table(path, self.block_size, header=header))
         return temp.to_bag()

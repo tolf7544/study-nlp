@@ -121,7 +121,7 @@ class JamoTokenizer:
                 "is_down_scaling": True
             }
 
-    def encode(self, token_list: list[JamoSet], return_attention_mask: bool = False) -> object:
+    def encode(self, token_list: list[JamoSet], return_attention_mask: bool = False) -> dict:
         result = {}
         down_scaling_mask = []
         attention_mask = []
